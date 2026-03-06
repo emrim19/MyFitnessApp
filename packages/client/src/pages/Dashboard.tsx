@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useWorkouts } from '../hooks/useWorkouts'
 import { useDashboardStats } from '../hooks/useDashboardStats'
+import { usePersonalRecords } from '../hooks/usePersonalRecords'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -18,6 +19,7 @@ function formatVolume(kg: number): string {
 export default function Dashboard() {
   const { workouts, loading, error } = useWorkouts(10)
   const { stats } = useDashboardStats()
+  const { records: prs } = usePersonalRecords()
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -88,6 +90,31 @@ export default function Dashboard() {
 
         </div>
       </section>
+
+      {/* Personal records this week */}
+      {prs.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            PRs this week
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {prs.map(pr => (
+              <div
+                key={pr.exerciseName}
+                className="flex items-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-2.5"
+              >
+                <span className="rounded-full bg-yellow-400 px-1.5 py-0.5 text-xs font-bold text-white">PR</span>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{pr.exerciseName}</p>
+                  <p className="text-xs text-gray-500">
+                    {pr.weightKg} kg{pr.reps ? ` × ${pr.reps} reps` : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
