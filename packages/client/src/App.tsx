@@ -7,6 +7,7 @@ import LogWorkout from './pages/LogWorkout'
 import WorkoutDetail from './pages/WorkoutDetail'
 import History from './pages/History'
 import Progress from './pages/Progress'
+import Metrics from './pages/Metrics'
 
 function AppLayout() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/workout/:id" element={<WorkoutDetail />} />
         <Route path="/history" element={<History />} />
         <Route path="/progress" element={<Progress />} />
+        <Route path="/metrics" element={<Metrics />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

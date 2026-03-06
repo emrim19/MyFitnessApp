@@ -24,6 +24,7 @@ export default function Navbar() {
               <NavLink to="/" end className={desktopLinkCls}>Dashboard</NavLink>
               <NavLink to="/history" className={desktopLinkCls}>History</NavLink>
               <NavLink to="/progress" className={desktopLinkCls}>Progress</NavLink>
+              <NavLink to="/metrics" className={desktopLinkCls}>Metrics</NavLink>
             </div>
           </div>
           <button
@@ -55,6 +56,12 @@ export default function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 17l4-8 4 4 4-6 4 3" />
             </svg>
             Progress
+          </NavLink>
+          <NavLink to="/metrics" className={bottomLinkCls}>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            Metrics
           </NavLink>
         </div>
       </nav>

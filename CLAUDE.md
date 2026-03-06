@@ -51,7 +51,7 @@ npm run lint --workspace=packages/client        # ESLint
 | Frontend | React 19 + Vite 7 + TypeScript 5 (strict) + Tailwind CSS v4 |
 | Routing | React Router v7 |
 | Database & Auth | Supabase (PostgreSQL + Auth + RLS) |
-| Charts | Recharts (planned) |
+| Charts | Recharts |
 | Hosting | Netlify (frontend) |
 
 ---
@@ -125,8 +125,9 @@ MyFitnessApp/
 │   │   │   │   ├── Dashboard.tsx    # Overview + recent workouts (planned)
 │   │   │   │   ├── LogWorkout.tsx   # Active workout logging (planned)
 │   │   │   │   ├── History.tsx      # Past workouts (planned)
-│   │   │   │   └── Progress.tsx     # Charts & visualizations (planned)
-│   │   │   ├── hooks/               # useWorkouts, useExercises (planned)
+│   │   │   │   ├── Progress.tsx     # Charts & visualizations (planned)
+│   │   │   │   └── Metrics.tsx      # Body metrics logging + progress chart
+│   │   │   ├── hooks/               # useWorkouts, useExercises, useBodyMetrics
 │   │   │   ├── vite-env.d.ts        # Typed ImportMetaEnv for VITE_ vars
 │   │   │   ├── App.tsx              # Route definitions
 │   │   │   └── main.tsx             # Entry: BrowserRouter > AuthProvider > App
@@ -206,6 +207,24 @@ CREATE POLICY "Users see own sets"
   ON workout_sets FOR ALL
   USING (workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid()));
 
+-- Body metrics (weight, height, body fat %, muscle mass)
+CREATE TABLE body_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  weight_kg NUMERIC(5,2),
+  height_cm NUMERIC(5,1),
+  body_fat_pct NUMERIC(4,1),
+  muscle_mass_kg NUMERIC(5,2),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE body_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users see own body metrics"
+  ON body_metrics FOR ALL USING (auth.uid() = user_id);
+
 -- Seed common exercises
 INSERT INTO exercises (name, muscle_group, type) VALUES
   ('Bench Press', 'chest', 'strength'),
@@ -244,6 +263,13 @@ INSERT INTO exercises (name, muscle_group, type) VALUES
 - Line chart: total weekly volume over last 12 weeks
 - Per-exercise personal record tracker
 - (Future) body weight trend if logging is added
+
+### Metrics (`/metrics`)
+- Log body measurements: weight (kg), height (cm), body fat %, muscle mass (kg)
+- All fields optional except date — log just what you track
+- Latest snapshot cards showing most recent value per metric
+- Line chart (Recharts) with toggle between weight / body fat / muscle mass
+- History table of all past entries
 
 ### Auth (`/auth`)
 - Email/password sign up and login via Supabase Auth

@@ -1,0 +1,296 @@
+import { useState } from 'react'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
+import { useBodyMetrics, type NewBodyMetric } from '../hooks/useBodyMetrics'
+
+type MetricKey = 'weight_kg' | 'body_fat_pct' | 'muscle_mass_kg'
+
+const METRIC_CONFIG: Record<MetricKey, { label: string; unit: string; color: string }> = {
+  weight_kg:      { label: 'Weight',      unit: 'kg', color: '#3b82f6' },
+  body_fat_pct:   { label: 'Body fat',    unit: '%',  color: '#f97316' },
+  muscle_mass_kg: { label: 'Muscle mass', unit: 'kg', color: '#22c55e' },
+}
+
+interface FormState {
+  date: string
+  weight_kg: string
+  height_cm: string
+  body_fat_pct: string
+  muscle_mass_kg: string
+  notes: string
+}
+
+const EMPTY_FORM: FormState = {
+  date: new Date().toISOString().slice(0, 10),
+  weight_kg: '',
+  height_cm: '',
+  body_fat_pct: '',
+  muscle_mass_kg: '',
+  notes: '',
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+const FORM_FIELDS: { key: keyof Omit<FormState, 'date' | 'notes'>; label: string; placeholder: string }[] = [
+  { key: 'weight_kg',      label: 'Weight (kg)',      placeholder: '70.0' },
+  { key: 'height_cm',      label: 'Height (cm)',      placeholder: '175' },
+  { key: 'body_fat_pct',   label: 'Body fat (%)',     placeholder: '15.0' },
+  { key: 'muscle_mass_kg', label: 'Muscle mass (kg)', placeholder: '60.0' },
+]
+
+export default function Metrics() {
+  const { metrics, loading, error, saveMetric } = useBodyMetrics()
+  const [activeMetric, setActiveMetric] = useState<MetricKey>('weight_kg')
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const latest = metrics[metrics.length - 1]
+
+  const chartData = metrics
+    .filter(m => m[activeMetric] !== null)
+    .map(m => ({ date: formatDate(m.date), value: m[activeMetric] }))
+
+  function field(key: keyof FormState, value: string) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFormError(null)
+    if (!form.weight_kg && !form.height_cm && !form.body_fat_pct && !form.muscle_mass_kg) {
+      setFormError('Enter at least one measurement.')
+      return
+    }
+    setSaving(true)
+    try {
+      const entry: NewBodyMetric = {
+        date: form.date,
+        weight_kg:      form.weight_kg      ? parseFloat(form.weight_kg)      : null,
+        height_cm:      form.height_cm      ? parseFloat(form.height_cm)      : null,
+        body_fat_pct:   form.body_fat_pct   ? parseFloat(form.body_fat_pct)   : null,
+        muscle_mass_kg: form.muscle_mass_kg ? parseFloat(form.muscle_mass_kg) : null,
+        notes: form.notes || null,
+      }
+      await saveMetric(entry)
+      setForm(EMPTY_FORM)
+      setShowForm(false)
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Failed to save.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const cfg = METRIC_CONFIG[activeMetric]
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Body Metrics</h1>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          {showForm ? 'Cancel' : '+ Log metrics'}
+        </button>
+      </div>
+
+      {/* Log form */}
+      {showForm && (
+        <form
+          onSubmit={handleSubmit}
+          className="mb-8 rounded-xl border border-gray-200 bg-white p-5 space-y-4"
+        >
+          <h2 className="font-semibold text-gray-900">New entry</h2>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">Date</span>
+            <input
+              type="date"
+              value={form.date}
+              onChange={e => field('date', e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-4">
+            {FORM_FIELDS.map(({ key, label, placeholder }) => (
+              <label key={key} className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">
+                  {label} <span className="font-normal text-gray-400">optional</span>
+                </span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={e => field(key, e.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </label>
+            ))}
+          </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">
+              Notes <span className="font-normal text-gray-400">optional</span>
+            </span>
+            <input
+              type="text"
+              placeholder="e.g. morning, before breakfast"
+              value={form.notes}
+              onChange={e => field('notes', e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </label>
+
+          {formError && <p className="text-sm text-red-500">{formError}</p>}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save entry'}
+          </button>
+        </form>
+      )}
+
+      {/* Loading / error */}
+      {loading && <p className="text-sm text-gray-400">Loading…</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {/* Empty state */}
+      {!loading && !error && metrics.length === 0 && (
+        <p className="rounded-xl border border-dashed border-gray-300 py-12 text-center text-sm text-gray-400">
+          No entries yet — hit <strong>Log metrics</strong> to track your first measurement.
+        </p>
+      )}
+
+      {!loading && !error && metrics.length > 0 && (
+        <>
+          {/* Latest snapshot */}
+          {latest && (
+            <section className="mb-8">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Latest</h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {(
+                  [
+                    ['Weight',      latest.weight_kg,      'kg'],
+                    ['Height',      latest.height_cm,      'cm'],
+                    ['Body fat',    latest.body_fat_pct,   '%'],
+                    ['Muscle mass', latest.muscle_mass_kg, 'kg'],
+                  ] as [string, number | null, string][]
+                ).map(([label, val, unit]) => (
+                  <div key={label} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                    <p className="text-xs text-gray-500">{label}</p>
+                    {val !== null ? (
+                      <>
+                        <p className="mt-0.5 text-xl font-bold text-gray-900">{val}</p>
+                        <p className="text-xs text-gray-400">{unit}</p>
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-base text-gray-300">—</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Progress chart */}
+          <section className="mb-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Progress</h2>
+              <div className="flex gap-2">
+                {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, c]) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveMetric(key)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      activeMetric === key
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {chartData.length < 2 ? (
+              <p className="text-sm text-gray-400">Log at least 2 entries to see a trend.</p>
+            ) : (
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} domain={['auto', 'auto']} />
+                    <Tooltip
+                      formatter={(v: number | undefined) => v !== undefined ? [`${v} ${cfg.unit}`, cfg.label] : ['-', cfg.label]}
+                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke={cfg.color}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </section>
+
+          {/* History table */}
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">History</h2>
+            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 text-xs text-gray-500">
+                    <th className="px-4 py-2 text-left font-medium">Date</th>
+                    <th className="px-4 py-2 text-right font-medium">Weight</th>
+                    <th className="px-4 py-2 text-right font-medium">Height</th>
+                    <th className="px-4 py-2 text-right font-medium">Body fat</th>
+                    <th className="px-4 py-2 text-right font-medium">Muscle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...metrics].reverse().map(m => (
+                    <tr key={m.id} className="border-b border-gray-50 last:border-0">
+                      <td className="px-4 py-2 text-gray-700">{formatDate(m.date)}</td>
+                      <td className="px-4 py-2 text-right text-gray-700">
+                        {m.weight_kg      !== null ? `${m.weight_kg} kg`      : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-700">
+                        {m.height_cm      !== null ? `${m.height_cm} cm`      : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-700">
+                        {m.body_fat_pct   !== null ? `${m.body_fat_pct}%`     : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-700">
+                        {m.muscle_mass_kg !== null ? `${m.muscle_mass_kg} kg` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  )
+}
