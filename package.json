@@ -1,0 +1,14 @@
+{
+  "name": "myfitnessapp",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=packages/client",
+    "build": "npm run build --workspace=packages/client",
+    "lint": "npm run lint --workspace=packages/client"
+  }
+}

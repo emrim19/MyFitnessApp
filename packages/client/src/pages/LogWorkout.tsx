@@ -1,0 +1,245 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { useExercises } from '../hooks/useExercises'
+import type { Exercise } from '../hooks/useExercises'
+import ExercisePicker from '../components/ExercisePicker'
+import { SetInputs, emptySet, setTypeLabel } from '../components/SetInputs'
+import type { SetRow } from '../components/SetInputs'
+
+type ExerciseType = Exercise['type']
+
+interface ExerciseEntry {
+  exercise_id: string
+  name: string
+  type: ExerciseType
+  sets: SetRow[]
+}
+
+export default function LogWorkout() {
+  const { user } = useAuth()
+  const { exercises, refetch } = useExercises()
+  const navigate = useNavigate()
+
+  const [title, setTitle] = useState('')
+  const [entries, setEntries] = useState<ExerciseEntry[]>([])
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const addedIds = new Set(entries.map(e => e.exercise_id))
+
+  function addExercise(exercise: Exercise) {
+    setEntries(prev => [
+      ...prev,
+      { exercise_id: exercise.id, name: exercise.name, type: exercise.type, sets: [emptySet()] },
+    ])
+  }
+
+  async function handleCreateExercise(data: {
+    name: string
+    type: Exercise['type']
+    muscle_group: string | null
+  }): Promise<Exercise> {
+    const { data: exercise, error } = await supabase
+      .from('exercises')
+      .insert({ ...data, user_id: user!.id })
+      .select('id, name, muscle_group, type')
+      .single()
+    if (error) throw error
+    await refetch()
+    return exercise as Exercise
+  }
+
+  function removeExercise(index: number) {
+    setEntries(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function addSet(exerciseIndex: number) {
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === exerciseIndex ? { ...entry, sets: [...entry.sets, emptySet()] } : entry
+      )
+    )
+  }
+
+  function removeSet(exerciseIndex: number, setIndex: number) {
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === exerciseIndex
+          ? { ...entry, sets: entry.sets.filter((_, si) => si !== setIndex) }
+          : entry
+      )
+    )
+  }
+
+  function updateSet(exerciseIndex: number, setIndex: number, field: keyof SetRow, value: string) {
+    setEntries(prev =>
+      prev.map((entry, i) =>
+        i === exerciseIndex
+          ? {
+              ...entry,
+              sets: entry.sets.map((s, si) => (si === setIndex ? { ...s, [field]: value } : s)),
+            }
+          : entry
+      )
+    )
+  }
+
+  function hasData(set: SetRow, type: ExerciseType) {
+    if (type === 'strength') return set.reps || set.weight_kg
+    if (type === 'cardio') return set.duration_minutes || set.distance_km
+    return set.reps // bodyweight
+  }
+
+  async function handleSave() {
+    if (entries.length === 0) {
+      setError('Add at least one exercise before saving.')
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const { data: workout, error: workoutErr } = await supabase
+        .from('workouts')
+        .insert({
+          user_id: user!.id,
+          title: title.trim() || null,
+          date: new Date().toISOString().slice(0, 10),
+        })
+        .select('id')
+        .single()
+
+      if (workoutErr) throw workoutErr
+
+      const sets = entries.flatMap(entry =>
+        entry.sets
+          .filter(s => hasData(s, entry.type))
+          .map((s, si) => ({
+            workout_id: workout.id,
+            exercise_id: entry.exercise_id,
+            set_number: si + 1,
+            reps: s.reps ? parseInt(s.reps) : null,
+            weight_kg: s.weight_kg ? parseFloat(s.weight_kg) : null,
+            duration_seconds: s.duration_minutes ? Math.round(parseFloat(s.duration_minutes) * 60) : null,
+            distance_meters: s.distance_km ? Math.round(parseFloat(s.distance_km) * 1000) : null,
+            rpe: s.rpe ? parseInt(s.rpe) : null,
+          }))
+      )
+
+      if (sets.length > 0) {
+        const { error: setsErr } = await supabase.from('workout_sets').insert(sets)
+        if (setsErr) throw setsErr
+      }
+
+      navigate('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save workout')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Log workout</h1>
+
+      {/* Title */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Workout title (optional)"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Exercise entries */}
+      <div className="space-y-4">
+        {entries.map((entry, ei) => (
+          <div key={entry.exercise_id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-900">{entry.name}</h2>
+                <p className="text-xs text-gray-400">{setTypeLabel(entry.type)}</p>
+              </div>
+              <button
+                onClick={() => removeExercise(ei)}
+                className="text-sm text-gray-400 hover:text-red-500"
+              >
+                Remove
+              </button>
+            </div>
+
+            {/* Set rows */}
+            <div className="mb-2 space-y-2">
+              {entry.sets.map((set, si) => (
+                <div key={si} className="flex items-center gap-2">
+                  <span className="w-6 text-center text-xs text-gray-400">{si + 1}</span>
+                  <SetInputs
+                    type={entry.type}
+                    set={set}
+                    onChange={(field, value) => updateSet(ei, si, field, value)}
+                  />
+                  {entry.sets.length > 1 && (
+                    <button
+                      onClick={() => removeSet(ei, si)}
+                      className="text-xs text-gray-300 hover:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => addSet(ei)} className="text-sm text-blue-600 hover:underline">
+              + Add set
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add exercise */}
+      <button
+        onClick={() => setPickerOpen(true)}
+        className="mt-4 w-full rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-blue-400 hover:text-blue-500"
+      >
+        + Add exercise
+      </button>
+
+      {pickerOpen && (
+        <ExercisePicker
+          exercises={exercises}
+          addedIds={addedIds}
+          onSelect={addExercise}
+          onCreate={handleCreateExercise}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
+
+      {/* Error + save */}
+      <div className="mt-8 space-y-3">
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save workout'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
