@@ -53,5 +53,25 @@ export function useBodyMetrics() {
     await fetchMetrics()
   }
 
-  return { metrics, loading, error, saveMetric }
+  async function updateMetric(id: string, entry: NewBodyMetric) {
+    const { error } = await supabase
+      .from('body_metrics')
+      .update(entry)
+      .eq('id', id)
+
+    if (error) throw error
+    await fetchMetrics()
+  }
+
+  async function deleteMetric(id: string) {
+    const { error } = await supabase
+      .from('body_metrics')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    await fetchMetrics()
+  }
+
+  return { metrics, loading, error, saveMetric, updateMetric, deleteMetric }
 }

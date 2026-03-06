@@ -42,9 +42,11 @@ const FORM_FIELDS: { key: keyof Omit<FormState, 'date' | 'notes'>; label: string
 ]
 
 export default function Metrics() {
-  const { metrics, loading, error, saveMetric } = useBodyMetrics()
+  const { metrics, loading, error, saveMetric, updateMetric, deleteMetric } = useBodyMetrics()
   const [activeMetric, setActiveMetric] = useState<MetricKey>('weight_kg')
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -57,6 +59,27 @@ export default function Metrics() {
 
   function field(key: keyof FormState, value: string) {
     setForm(f => ({ ...f, [key]: value }))
+  }
+
+  function startEdit(m: ReturnType<typeof useBodyMetrics>['metrics'][number]) {
+    setForm({
+      date:           m.date,
+      weight_kg:      m.weight_kg      !== null ? String(m.weight_kg)      : '',
+      height_cm:      m.height_cm      !== null ? String(m.height_cm)      : '',
+      body_fat_pct:   m.body_fat_pct   !== null ? String(m.body_fat_pct)   : '',
+      muscle_mass_kg: m.muscle_mass_kg !== null ? String(m.muscle_mass_kg) : '',
+      notes:          m.notes ?? '',
+    })
+    setEditingId(m.id)
+    setShowForm(true)
+    setFormError(null)
+  }
+
+  function cancelForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(EMPTY_FORM)
+    setFormError(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,13 +99,26 @@ export default function Metrics() {
         muscle_mass_kg: form.muscle_mass_kg ? parseFloat(form.muscle_mass_kg) : null,
         notes: form.notes || null,
       }
-      await saveMetric(entry)
-      setForm(EMPTY_FORM)
-      setShowForm(false)
+      if (editingId) {
+        await updateMetric(editingId, entry)
+      } else {
+        await saveMetric(entry)
+      }
+      cancelForm()
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Failed to save.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteMetric(id)
+    } catch (err: unknown) {
+      console.error(err)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -94,7 +130,7 @@ export default function Metrics() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Body Metrics</h1>
         <button
-          onClick={() => setShowForm(v => !v)}
+          onClick={() => showForm ? cancelForm() : setShowForm(true)}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
         >
           {showForm ? 'Cancel' : '+ Log metrics'}
@@ -107,7 +143,7 @@ export default function Metrics() {
           onSubmit={handleSubmit}
           className="mb-8 rounded-xl border border-gray-200 bg-white p-5 space-y-4"
         >
-          <h2 className="font-semibold text-gray-900">New entry</h2>
+          <h2 className="font-semibold text-gray-900">{editingId ? 'Edit entry' : 'New entry'}</h2>
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-gray-500">Date</span>
@@ -158,7 +194,7 @@ export default function Metrics() {
             disabled={saving}
             className="w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Save entry'}
+            {saving ? 'Saving…' : editingId ? 'Update entry' : 'Save entry'}
           </button>
         </form>
       )}
@@ -265,6 +301,7 @@ export default function Metrics() {
                     <th className="px-4 py-2 text-right font-medium">Height</th>
                     <th className="px-4 py-2 text-right font-medium">Body fat</th>
                     <th className="px-4 py-2 text-right font-medium">Muscle</th>
+                    <th className="px-4 py-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -282,6 +319,45 @@ export default function Metrics() {
                       </td>
                       <td className="px-4 py-2 text-right text-gray-700">
                         {m.muscle_mass_kg !== null ? `${m.muscle_mass_kg} kg` : '—'}
+                      </td>
+                      <td className="px-4 py-2">
+                        {deletingId === m.id ? (
+                          <span className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDelete(m.id)}
+                              className="text-xs font-medium text-red-500 hover:text-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(null)}
+                              className="text-xs text-gray-400 hover:text-gray-600"
+                            >
+                              No
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => startEdit(m)}
+                              className="text-gray-400 hover:text-gray-700"
+                              title="Edit"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(m.id)}
+                              className="text-gray-400 hover:text-red-500"
+                              title="Delete"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            </button>
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
