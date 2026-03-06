@@ -13,7 +13,7 @@ export function emptySet(): SetRow {
 }
 
 export const inputCls =
-  'rounded-lg border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+  'min-w-0 flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
 
 export function setTypeLabel(type: ExerciseType) {
   if (type === 'cardio') return 'min · km'
@@ -33,29 +33,29 @@ export function SetInputs({
   if (type === 'strength') {
     return (
       <>
-        <input type="number" placeholder="Reps" value={set.reps}
-          onChange={e => onChange('reps', e.target.value)} className={`w-24 ${inputCls}`} />
-        <input type="number" placeholder="kg" value={set.weight_kg}
-          onChange={e => onChange('weight_kg', e.target.value)} className={`w-24 ${inputCls}`} />
+        <input type="number" inputMode="numeric" placeholder="Reps" value={set.reps}
+          onChange={e => onChange('reps', e.target.value)} className={inputCls} />
+        <input type="number" inputMode="decimal" placeholder="kg" value={set.weight_kg}
+          onChange={e => onChange('weight_kg', e.target.value)} className={inputCls} />
       </>
     )
   }
   if (type === 'cardio') {
     return (
       <>
-        <input type="number" placeholder="Min" value={set.duration_minutes}
-          onChange={e => onChange('duration_minutes', e.target.value)} className={`w-24 ${inputCls}`} />
-        <input type="number" placeholder="km" value={set.distance_km}
-          onChange={e => onChange('distance_km', e.target.value)} className={`w-24 ${inputCls}`} />
+        <input type="number" inputMode="decimal" placeholder="Min" value={set.duration_minutes}
+          onChange={e => onChange('duration_minutes', e.target.value)} className={inputCls} />
+        <input type="number" inputMode="decimal" placeholder="km" value={set.distance_km}
+          onChange={e => onChange('distance_km', e.target.value)} className={inputCls} />
       </>
     )
   }
   return (
     <>
-      <input type="number" placeholder="Reps" value={set.reps}
-        onChange={e => onChange('reps', e.target.value)} className={`w-24 ${inputCls}`} />
-      <input type="number" placeholder="RPE 1–10" min={1} max={10} value={set.rpe}
-        onChange={e => onChange('rpe', e.target.value)} className={`w-24 ${inputCls}`} />
+      <input type="number" inputMode="numeric" placeholder="Reps" value={set.reps}
+        onChange={e => onChange('reps', e.target.value)} className={inputCls} />
+      <input type="number" inputMode="numeric" placeholder="RPE 1–10" min={1} max={10} value={set.rpe}
+        onChange={e => onChange('rpe', e.target.value)} className={inputCls} />
     </>
   )
 }

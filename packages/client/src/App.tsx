@@ -12,7 +12,9 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <Outlet />
+      <div className="pb-16 sm:pb-0">
+        <Outlet />
+      </div>
     </div>
   )
 }
