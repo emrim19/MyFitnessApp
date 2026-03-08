@@ -6,6 +6,7 @@ import type { SetRow, ExerciseType } from '../components/SetInputs'
 import ExercisePicker from '../components/ExercisePicker'
 import { useExercises } from '../hooks/useExercises'
 import type { Exercise } from '../hooks/useExercises'
+import { useMuscleGroupColors } from '../hooks/useMuscleGroupColors'
 
 // ── Data types ────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ interface ExerciseGroup {
   exercise_id: string
   name: string
   type: ExerciseType
+  muscle_group: string | null
   sets: SetDetail[]
 }
 
@@ -44,6 +46,7 @@ interface EditGroup {
   exercise_id: string
   name: string
   type: ExerciseType
+  muscle_group: string | null
   sets: EditSet[]
 }
 
@@ -107,6 +110,7 @@ export default function WorkoutDetail() {
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const { exercises, refetch: refetchExercises } = useExercises()
+  const { getColor } = useMuscleGroupColors()
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -118,7 +122,7 @@ export default function WorkoutDetail() {
       supabase.from('workouts').select('id, title, date, duration_minutes, is_rest_day').eq('id', id!).single(),
       supabase
         .from('workout_sets')
-        .select('id, set_number, reps, weight_kg, duration_seconds, distance_meters, rpe, exercises(id, name, type)')
+        .select('id, set_number, reps, weight_kg, duration_seconds, distance_meters, rpe, exercises(id, name, type, muscle_group)')
         .eq('workout_id', id!)
         .order('set_number'),
     ])
@@ -128,8 +132,8 @@ export default function WorkoutDetail() {
 
     const map = new Map<string, ExerciseGroup>()
     for (const row of setsData ?? []) {
-      const ex = (Array.isArray(row.exercises) ? row.exercises[0] : row.exercises) as { id: string; name: string; type: ExerciseType }
-      if (!map.has(ex.id)) map.set(ex.id, { exercise_id: ex.id, name: ex.name, type: ex.type, sets: [] })
+      const ex = (Array.isArray(row.exercises) ? row.exercises[0] : row.exercises) as { id: string; name: string; type: ExerciseType; muscle_group: string | null }
+      if (!map.has(ex.id)) map.set(ex.id, { exercise_id: ex.id, name: ex.name, type: ex.type, muscle_group: ex.muscle_group ?? null, sets: [] })
       map.get(ex.id)!.sets.push({
         id: row.id,
         set_number: row.set_number,
@@ -184,7 +188,7 @@ export default function WorkoutDetail() {
   function addExerciseToEdit(exercise: Exercise) {
     setEditGroups(prev => [
       ...prev,
-      { exercise_id: exercise.id, name: exercise.name, type: exercise.type, sets: [{ id: '', ...emptySet() }] },
+      { exercise_id: exercise.id, name: exercise.name, type: exercise.type, muscle_group: exercise.muscle_group ?? null, sets: [{ id: '', ...emptySet() }] },
     ])
   }
 
@@ -316,9 +320,15 @@ export default function WorkoutDetail() {
         {(editing ? editGroups : groups).map((group, gi) => (
           <div key={group.exercise_id} className="rounded-xl border border-slate-700 bg-slate-900 p-4">
             <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-slate-100">{group.name}</h2>
-                <p className="text-xs text-slate-500">{setTypeLabel(group.type)}</p>
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: getColor(group.muscle_group ?? group.type) }}
+                />
+                <div>
+                  <h2 className="font-semibold text-slate-100">{group.name}</h2>
+                  <p className="text-xs text-slate-500">{setTypeLabel(group.type)}</p>
+                </div>
               </div>
             </div>
 

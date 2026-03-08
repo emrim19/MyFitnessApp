@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Exercise } from '../hooks/useExercises'
+import { useMuscleGroupColors } from '../hooks/useMuscleGroupColors'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -135,6 +136,7 @@ function StatsView({
 }) {
   const type = exercise.type
   const recent = [...sessions].reverse()
+  const { getColor } = useMuscleGroupColors()
 
   const prWeight = sessions.reduce((m, s) => Math.max(m, s.bestWeight ?? 0), 0)
   const prE1RM = sessions.reduce((m, s) => Math.max(m, s.bestE1RM ?? 0), 0)
@@ -150,6 +152,10 @@ function StatsView({
           ← Change exercise
         </button>
         <div className="flex items-center gap-3">
+          <span
+            className="h-3.5 w-3.5 shrink-0 rounded-full"
+            style={{ backgroundColor: getColor(exercise.muscle_group ?? exercise.type) }}
+          />
           <h2 className="text-2xl font-bold text-slate-100">{exercise.name}</h2>
           <span className="rounded-full border border-slate-700 px-2 py-0.5 text-xs capitalize text-slate-500">
             {exercise.type}
@@ -241,6 +247,7 @@ function ExerciseSelector({
   onSelect: (ex: LoggedExercise) => void
 }) {
   const [search, setSearch] = useState('')
+  const { getColor } = useMuscleGroupColors()
 
   const filtered = search.trim()
     ? exercises.filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
@@ -272,9 +279,13 @@ function ExerciseSelector({
           <li key={ex.id}>
             <button
               onClick={() => onSelect(ex)}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600 hover:bg-slate-800"
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600 hover:bg-slate-800"
             >
-              <div>
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: getColor(ex.muscle_group ?? ex.type) }}
+              />
+              <div className="flex-1">
                 <p className="font-medium text-slate-100">{ex.name}</p>
                 <p className="text-sm capitalize text-slate-500">
                   {ex.muscle_group ?? ex.type}
