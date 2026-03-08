@@ -2,11 +2,11 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const desktopLinkCls = ({ isActive }: { isActive: boolean }) =>
-  `text-sm font-medium transition-colors ${isActive ? 'text-amber-500' : 'text-stone-500 hover:text-stone-200'}`
+  `text-sm font-medium transition-colors ${isActive ? 'text-blue-500' : 'text-slate-500 hover:text-slate-200'}`
 
 const bottomLinkCls = ({ isActive }: { isActive: boolean }) =>
   `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
-    isActive ? 'text-amber-500' : 'text-stone-500'
+    isActive ? 'text-blue-500' : 'text-slate-500'
   }`
 
 export default function Navbar() {
@@ -15,10 +15,10 @@ export default function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <nav className="border-b border-stone-800 bg-stone-950 px-4 py-3">
+      <nav className="border-b border-slate-800 bg-slate-950 px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-6">
-            <span className="text-lg font-bold text-stone-100">RimerFit</span>
+            <span className="text-lg font-bold text-slate-100">RimerFit</span>
             {/* Desktop-only nav links */}
             <div className="hidden items-center gap-6 sm:flex">
               <NavLink to="/" end className={desktopLinkCls}>Dashboard</NavLink>
@@ -29,7 +29,7 @@ export default function Navbar() {
           </div>
           <button
             onClick={signOut}
-            className="text-sm text-stone-500 hover:text-stone-100"
+            className="text-sm text-slate-500 hover:text-slate-100"
           >
             Sign out
           </button>
@@ -37,7 +37,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-stone-950 sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-950 sm:hidden">
         <div className="flex">
           <NavLink to="/" end className={bottomLinkCls}>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

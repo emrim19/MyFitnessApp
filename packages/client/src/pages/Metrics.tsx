@@ -7,8 +7,8 @@ import { useBodyMetrics, type NewBodyMetric } from '../hooks/useBodyMetrics'
 type MetricKey = 'weight_kg' | 'body_fat_pct' | 'muscle_mass_kg'
 
 const METRIC_CONFIG: Record<MetricKey, { label: string; unit: string; color: string }> = {
-  weight_kg:      { label: 'Weight',      unit: 'kg', color: '#f59e0b' },
-  body_fat_pct:   { label: 'Body fat',    unit: '%',  color: '#f97316' },
+  weight_kg:      { label: 'Weight',      unit: 'kg', color: '#3b82f6' },
+  body_fat_pct:   { label: 'Body fat',    unit: '%',  color: '#8b5cf6' },
   muscle_mass_kg: { label: 'Muscle mass', unit: 'kg', color: '#22c55e' },
 }
 
@@ -41,7 +41,7 @@ const FORM_FIELDS: { key: keyof Omit<FormState, 'date' | 'notes'>; label: string
   { key: 'muscle_mass_kg', label: 'Muscle mass (kg)', placeholder: '60.0' },
 ]
 
-const inputCls = 'rounded-lg border border-stone-700 bg-stone-800 px-3 py-2 text-sm text-stone-100 focus:border-amber-500 focus:outline-none'
+const inputCls = 'rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:outline-none'
 
 export default function Metrics() {
   const { metrics, loading, error, saveMetric, updateMetric, deleteMetric } = useBodyMetrics()
@@ -130,10 +130,10 @@ export default function Metrics() {
     <div className="mx-auto max-w-2xl px-4 py-8">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-100">Body Metrics</h1>
+        <h1 className="text-2xl font-bold text-slate-100">Body Metrics</h1>
         <button
           onClick={() => showForm ? cancelForm() : setShowForm(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-stone-950 hover:bg-amber-600"
+          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-blue-600"
         >
           {showForm ? 'Cancel' : '+ Log metrics'}
         </button>
@@ -143,12 +143,12 @@ export default function Metrics() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="mb-8 rounded-xl border border-stone-700 bg-stone-900 p-5 space-y-4"
+          className="mb-8 rounded-xl border border-slate-700 bg-slate-900 p-5 space-y-4"
         >
-          <h2 className="font-semibold text-stone-100">{editingId ? 'Edit entry' : 'New entry'}</h2>
+          <h2 className="font-semibold text-slate-100">{editingId ? 'Edit entry' : 'New entry'}</h2>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-stone-400">Date</span>
+            <span className="text-xs font-medium text-slate-400">Date</span>
             <input
               type="date"
               lang="en-GB"
@@ -161,8 +161,8 @@ export default function Metrics() {
           <div className="grid grid-cols-2 gap-4">
             {FORM_FIELDS.map(({ key, label, placeholder }) => (
               <label key={key} className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-stone-400">
-                  {label} <span className="font-normal text-stone-500">optional</span>
+                <span className="text-xs font-medium text-slate-400">
+                  {label} <span className="font-normal text-slate-500">optional</span>
                 </span>
                 <input
                   type="number"
@@ -178,8 +178,8 @@ export default function Metrics() {
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-stone-400">
-              Notes <span className="font-normal text-stone-500">optional</span>
+            <span className="text-xs font-medium text-slate-400">
+              Notes <span className="font-normal text-slate-500">optional</span>
             </span>
             <input
               type="text"
@@ -195,18 +195,18 @@ export default function Metrics() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-lg bg-amber-500 py-2 text-sm font-semibold text-stone-950 hover:bg-amber-600 disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-500 py-2 text-sm font-semibold text-slate-950 hover:bg-blue-600 disabled:opacity-50"
           >
             {saving ? 'Saving…' : editingId ? 'Update entry' : 'Save entry'}
           </button>
         </form>
       )}
 
-      {loading && <p className="text-sm text-stone-500">Loading…</p>}
+      {loading && <p className="text-sm text-slate-500">Loading…</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {!loading && !error && metrics.length === 0 && (
-        <p className="rounded-xl border border-dashed border-stone-700 py-12 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-dashed border-slate-700 py-12 text-center text-sm text-slate-500">
           No entries yet — hit <strong>Log metrics</strong> to track your first measurement.
         </p>
       )}
@@ -216,7 +216,7 @@ export default function Metrics() {
           {/* Latest snapshot */}
           {latest && (
             <section className="mb-8">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-400">Latest</h2>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Latest</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {(
                   [
@@ -226,15 +226,15 @@ export default function Metrics() {
                     ['Muscle mass', latest.muscle_mass_kg, 'kg'],
                   ] as [string, number | null, string][]
                 ).map(([label, val, unit]) => (
-                  <div key={label} className="rounded-xl border border-stone-700 bg-stone-900 px-4 py-3">
-                    <p className="text-xs text-stone-400">{label}</p>
+                  <div key={label} className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
+                    <p className="text-xs text-slate-400">{label}</p>
                     {val !== null ? (
                       <>
-                        <p className="mt-0.5 text-xl font-bold text-stone-100">{val}</p>
-                        <p className="text-xs text-stone-500">{unit}</p>
+                        <p className="mt-0.5 text-xl font-bold text-slate-100">{val}</p>
+                        <p className="text-xs text-slate-500">{unit}</p>
                       </>
                     ) : (
-                      <p className="mt-0.5 text-base text-stone-600">—</p>
+                      <p className="mt-0.5 text-base text-slate-600">—</p>
                     )}
                   </div>
                 ))}
@@ -245,7 +245,7 @@ export default function Metrics() {
           {/* Progress chart */}
           <section className="mb-8">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-400">Progress</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Progress</h2>
               <div className="flex gap-2">
                 {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, c]) => (
                   <button
@@ -253,8 +253,8 @@ export default function Metrics() {
                     onClick={() => setActiveMetric(key)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       activeMetric === key
-                        ? 'bg-amber-500 text-stone-950'
-                        : 'bg-stone-800 text-stone-400 hover:bg-stone-700'
+                        ? 'bg-blue-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                     }`}
                   >
                     {c.label}
@@ -264,17 +264,17 @@ export default function Metrics() {
             </div>
 
             {chartData.length < 2 ? (
-              <p className="text-sm text-stone-500">Log at least 2 entries to see a trend.</p>
+              <p className="text-sm text-slate-500">Log at least 2 entries to see a trend.</p>
             ) : (
-              <div className="rounded-xl border border-stone-700 bg-stone-900 p-4">
+              <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#292524" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#78716c' }} />
-                    <YAxis tick={{ fontSize: 11, fill: '#78716c' }} domain={['auto', 'auto']} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={['auto', 'auto']} />
                     <Tooltip
                       formatter={(v: number | undefined) => v !== undefined ? [`${v} ${cfg.unit}`, cfg.label] : ['-', cfg.label]}
-                      contentStyle={{ borderRadius: 8, border: '1px solid #44403c', background: '#1c1917', color: '#f5f4f2', fontSize: 12 }}
+                      contentStyle={{ borderRadius: 8, border: '1px solid #334155', background: '#0f172a', color: '#f1f5f9', fontSize: 12 }}
                     />
                     <Line
                       type="monotone"
@@ -292,11 +292,11 @@ export default function Metrics() {
 
           {/* History table */}
           <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-400">History</h2>
-            <div className="overflow-x-auto rounded-xl border border-stone-700 bg-stone-900">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">History</h2>
+            <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-900">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-stone-800 text-xs text-stone-400">
+                  <tr className="border-b border-slate-800 text-xs text-slate-400">
                     <th className="px-4 py-2 text-left font-medium">Date</th>
                     <th className="px-4 py-2 text-right font-medium">Weight</th>
                     <th className="px-4 py-2 text-right font-medium">Height</th>
@@ -307,18 +307,18 @@ export default function Metrics() {
                 </thead>
                 <tbody>
                   {[...metrics].reverse().map(m => (
-                    <tr key={m.id} className="border-b border-stone-800 last:border-0">
-                      <td className="px-4 py-2 text-stone-200">{formatDate(m.date)}</td>
-                      <td className="px-4 py-2 text-right text-stone-200">
+                    <tr key={m.id} className="border-b border-slate-800 last:border-0">
+                      <td className="px-4 py-2 text-slate-200">{formatDate(m.date)}</td>
+                      <td className="px-4 py-2 text-right text-slate-200">
                         {m.weight_kg      !== null ? `${m.weight_kg} kg`      : '—'}
                       </td>
-                      <td className="px-4 py-2 text-right text-stone-200">
+                      <td className="px-4 py-2 text-right text-slate-200">
                         {m.height_cm      !== null ? `${m.height_cm} cm`      : '—'}
                       </td>
-                      <td className="px-4 py-2 text-right text-stone-200">
+                      <td className="px-4 py-2 text-right text-slate-200">
                         {m.body_fat_pct   !== null ? `${m.body_fat_pct}%`     : '—'}
                       </td>
-                      <td className="px-4 py-2 text-right text-stone-200">
+                      <td className="px-4 py-2 text-right text-slate-200">
                         {m.muscle_mass_kg !== null ? `${m.muscle_mass_kg} kg` : '—'}
                       </td>
                       <td className="px-4 py-2">
@@ -332,7 +332,7 @@ export default function Metrics() {
                             </button>
                             <button
                               onClick={() => setDeletingId(null)}
-                              className="text-xs text-stone-500 hover:text-stone-300"
+                              className="text-xs text-slate-500 hover:text-slate-300"
                             >
                               No
                             </button>
@@ -341,7 +341,7 @@ export default function Metrics() {
                           <span className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => startEdit(m)}
-                              className="text-stone-500 hover:text-stone-200"
+                              className="text-slate-500 hover:text-slate-200"
                               title="Edit"
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -350,7 +350,7 @@ export default function Metrics() {
                             </button>
                             <button
                               onClick={() => setDeletingId(m.id)}
-                              className="text-stone-500 hover:text-red-400"
+                              className="text-slate-500 hover:text-red-400"
                               title="Delete"
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
