@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useWorkouts } from '../hooks/useWorkouts'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { usePersonalRecords } from '../hooks/usePersonalRecords'
+import { useMuscleGroupVolume } from '../hooks/useMuscleGroupVolume'
+import type { MuscleVolumePeriod } from '../hooks/useMuscleGroupVolume'
+import { useMuscleGroupColors } from '../hooks/useMuscleGroupColors'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -20,6 +24,9 @@ export default function Dashboard() {
   const { workouts, loading, error } = useWorkouts(10)
   const { stats } = useDashboardStats()
   const { records: prs } = usePersonalRecords()
+  const [volumePeriod, setVolumePeriod] = useState<MuscleVolumePeriod>('week')
+  const { data: muscleVolume, loading: muscleLoading } = useMuscleGroupVolume(volumePeriod)
+  const { getColor } = useMuscleGroupColors()
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -111,6 +118,78 @@ export default function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* Muscle group volume */}
+      <section className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Volume by muscle
+          </h2>
+          <div className="flex rounded-lg border border-slate-700 p-0.5 text-xs font-medium">
+            {(['week', '4weeks'] as MuscleVolumePeriod[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setVolumePeriod(p)}
+                className={`rounded-md px-2.5 py-1 transition-colors ${
+                  volumePeriod === p ? 'bg-slate-700 text-slate-100' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {p === 'week' ? 'This week' : '4 weeks'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+          {muscleLoading ? (
+            <p className="text-sm text-slate-500">Loading…</p>
+          ) : muscleVolume.length === 0 ? (
+            <p className="text-sm text-slate-500">No strength data for this period.</p>
+          ) : (
+            <>
+              {/* Segmented bar */}
+              <div className="mb-4 flex h-3 w-full overflow-hidden rounded-full">
+                {(() => {
+                  const total = muscleVolume.reduce((s, g) => s + g.volume, 0)
+                  return muscleVolume.map(g => (
+                    <div
+                      key={g.group}
+                      title={`${g.group}: ${Math.round(g.volume).toLocaleString()} kg`}
+                      style={{ width: `${(g.volume / total) * 100}%`, backgroundColor: getColor(g.group) }}
+                    />
+                  ))
+                })()}
+              </div>
+
+              {/* Per-group rows */}
+              <ul className="space-y-2.5">
+                {muscleVolume.map(g => {
+                  const total = muscleVolume.reduce((s, x) => s + x.volume, 0)
+                  const pct = Math.round((g.volume / total) * 100)
+                  return (
+                    <li key={g.group} className="flex items-center gap-3">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: getColor(g.group) }}
+                      />
+                      <span className="w-20 shrink-0 text-sm capitalize text-slate-300">{g.group}</span>
+                      <div className="flex-1 overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className="h-1.5 rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: getColor(g.group) }}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right text-xs text-slate-500">
+                        {formatVolume(g.volume)} kg
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      </section>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
