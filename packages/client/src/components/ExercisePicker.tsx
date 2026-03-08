@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Exercise } from '../hooks/useExercises'
+import { useMuscleGroupColors } from '../hooks/useMuscleGroupColors'
 
 const GROUP_ORDER = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'core', 'cardio']
 const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'core']
+
+const PRESET_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#84cc16',
+  '#22c55e', '#14b8a6', '#3b82f6', '#0ea5e9',
+  '#6366f1', '#8b5cf6', '#ec4899', '#64748b',
+]
 
 function groupKey(exercise: Exercise): string {
   return exercise.muscle_group?.toLowerCase() ?? 'cardio'
@@ -23,6 +30,65 @@ function groupExercises(exercises: Exercise[]): [string, Exercise[]][] {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
   })
 }
+
+// ── Color dot with swatch picker ──────────────────────────────
+
+function ColorDot({
+  group,
+  getColor,
+  setColor,
+}: {
+  group: string
+  getColor: (g: string) => string
+  setColor: (g: string, c: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        title="Change colour"
+        onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
+        className="h-3 w-3 rounded-full ring-1 ring-white/20 transition-transform hover:scale-125"
+        style={{ backgroundColor: getColor(group) }}
+      />
+      {open && (
+        <div
+          className="absolute left-0 top-5 z-10 rounded-xl border border-slate-700 bg-slate-800 p-2 shadow-xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 capitalize">
+            {group}
+          </p>
+          <div className="grid grid-cols-6 gap-1.5">
+            {PRESET_COLORS.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => { setColor(group, c); setOpen(false) }}
+                className="h-5 w-5 rounded-full ring-1 ring-white/10 transition-transform hover:scale-110"
+                style={{ backgroundColor: c, outline: getColor(group) === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Props ─────────────────────────────────────────────────────
 
 interface CreateData {
   name: string
@@ -101,6 +167,7 @@ function BrowseView({
 }) {
   const [search, setSearch] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const { getColor, setColor } = useMuscleGroupColors()
 
   useEffect(() => { searchRef.current?.focus() }, [])
 
@@ -134,9 +201,12 @@ function BrowseView({
         )}
         {groups.map(([group, exs]) => (
           <div key={group} className="mb-4">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 capitalize">
-              {group}
-            </p>
+            <div className="mb-1 flex items-center gap-2">
+              <ColorDot group={group} getColor={getColor} setColor={setColor} />
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 capitalize">
+                {group}
+              </p>
+            </div>
             <ul className="space-y-1">
               {exs.map(ex => {
                 const added = addedIds.has(ex.id)
@@ -145,11 +215,15 @@ function BrowseView({
                     <button
                       disabled={added}
                       onClick={() => onSelect(ex)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                         added ? 'cursor-default text-slate-600' : 'text-slate-100 hover:bg-slate-800'
                       }`}
                     >
-                      <span>{ex.name}</span>
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: added ? '#475569' : getColor(group) }}
+                      />
+                      <span className="flex-1">{ex.name}</span>
                       {added && <span className="text-xs text-slate-600">Added</span>}
                     </button>
                   </li>
