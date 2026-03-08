@@ -152,7 +152,7 @@ export default function Metrics() {
               lang="en-GB"
               value={form.date}
               onChange={e => field('date', e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
             />
           </label>
 
@@ -169,7 +169,7 @@ export default function Metrics() {
                   placeholder={placeholder}
                   value={form[key]}
                   onChange={e => field(key, e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
                 />
               </label>
             ))}
@@ -184,7 +184,7 @@ export default function Metrics() {
               placeholder="e.g. morning, before breakfast"
               value={form.notes}
               onChange={e => field('notes', e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
             />
           </label>
 
