@@ -8,6 +8,7 @@ import WorkoutDetail from './pages/WorkoutDetail'
 import History from './pages/History'
 import Progress from './pages/Progress'
 import Metrics from './pages/Metrics'
+import Templates from './pages/Templates'
 
 function AppLayout() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/history" element={<History />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/metrics" element={<Metrics />} />
+        <Route path="/templates" element={<Templates />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { WorkoutTemplate } from '../hooks/useTemplates'
 
 const PRESET_COLORS = [
@@ -135,6 +136,16 @@ export default function TemplatePicker({ templates, onSelect, onDelete, onColorC
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="border-t border-slate-800 px-4 py-3">
+          <Link
+            to="/templates"
+            onClick={onClose}
+            className="text-sm text-slate-500 hover:text-slate-300"
+          >
+            Manage templates →
+          </Link>
         </div>
       </div>
     </div>
