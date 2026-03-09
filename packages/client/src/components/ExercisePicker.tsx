@@ -6,9 +6,10 @@ import { useMuscleGroups } from '../hooks/useMuscleGroups'
 import type { MuscleGroup } from '../hooks/useMuscleGroups'
 
 const PRESET_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#84cc16',
-  '#22c55e', '#14b8a6', '#3b82f6', '#0ea5e9',
-  '#6366f1', '#8b5cf6', '#ec4899', '#64748b',
+  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981',
+  '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6',
+  '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#fb923c', '#fbbf24',
+  '#dc2626', '#ea580c', '#16a34a', '#0891b2', '#2563eb', '#64748b',
 ]
 
 function groupKey(exercise: Exercise): string {
@@ -64,13 +65,13 @@ function ColorDot({
       />
       {open && (
         <div
-          className="absolute left-0 top-6 z-10 w-48 rounded-2xl border border-slate-700 bg-slate-800/95 p-4 shadow-2xl backdrop-blur-sm"
+          className="absolute left-0 top-6 z-10 w-52 rounded-2xl border border-slate-700 bg-slate-800/95 p-4 shadow-2xl backdrop-blur-sm"
           onClick={e => e.stopPropagation()}
         >
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400 capitalize">
             {group}
           </p>
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-6 gap-2">
             {PRESET_COLORS.map(c => {
               const active = getColor(group) === c
               return (
