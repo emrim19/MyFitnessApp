@@ -237,6 +237,57 @@ function StatsView({
   )
 }
 
+type SortMode = 'type' | 'muscle' | 'most-used' | 'az'
+
+const SORT_LABELS: { mode: SortMode; label: string }[] = [
+  { mode: 'type',      label: 'Type'      },
+  { mode: 'muscle',    label: 'Muscle'    },
+  { mode: 'most-used', label: 'Most used' },
+  { mode: 'az',        label: 'A–Z'       },
+]
+
+const TYPE_ORDER: ExerciseType[] = ['strength', 'bodyweight', 'cardio']
+
+function groupBy<T>(items: T[], key: (item: T) => string): [string, T[]][] {
+  const map = new Map<string, T[]>()
+  for (const item of items) {
+    const k = key(item)
+    const g = map.get(k) ?? []
+    g.push(item)
+    map.set(k, g)
+  }
+  return [...map.entries()]
+}
+
+function ExerciseRow({
+  ex,
+  onSelect,
+  getColor,
+}: {
+  ex: LoggedExercise
+  onSelect: (ex: LoggedExercise) => void
+  getColor: (g: string) => string
+}) {
+  return (
+    <button
+      onClick={() => onSelect(ex)}
+      className="flex w-full items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600 hover:bg-slate-800"
+    >
+      <span
+        className="h-3 w-3 shrink-0 rounded-full"
+        style={{ backgroundColor: getColor(ex.muscle_group ?? ex.type) }}
+      />
+      <div className="flex-1">
+        <p className="font-medium text-slate-100">{ex.name}</p>
+        <p className="text-sm capitalize text-slate-500">{ex.muscle_group ?? ex.type}</p>
+      </div>
+      <span className="text-sm text-slate-500">
+        {ex.session_count} {ex.session_count === 1 ? 'session' : 'sessions'}
+      </span>
+    </button>
+  )
+}
+
 function ExerciseSelector({
   exercises,
   loading,
@@ -247,57 +298,93 @@ function ExerciseSelector({
   onSelect: (ex: LoggedExercise) => void
 }) {
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortMode>('type')
   const { getColor } = useMuscleGroupColors()
 
-  const filtered = search.trim()
-    ? exercises.filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
+  const query = search.trim().toLowerCase()
+  const filtered = query
+    ? exercises.filter(e => e.name.toLowerCase().includes(query))
     : exercises
+
+  // Flat sorted lists
+  const byAZ       = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+  const byMostUsed = [...filtered].sort((a, b) => b.session_count - a.session_count)
+
+  // Grouped lists (only when not searching)
+  const byType = groupBy([...filtered].sort((a, b) => a.name.localeCompare(b.name)), ex => ex.type)
+    .sort(([a], [b]) => TYPE_ORDER.indexOf(a as ExerciseType) - TYPE_ORDER.indexOf(b as ExerciseType))
+
+  const byMuscle = groupBy([...filtered].sort((a, b) => a.name.localeCompare(b.name)), ex => ex.muscle_group ?? ex.type)
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  const isGrouped = !query && (sort === 'type' || sort === 'muscle')
 
   return (
     <div>
-      <div className="mb-4">
+      {/* Search */}
+      <div className="mb-3">
         <input
           type="text"
           placeholder="Search exercises…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          autoFocus
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+
+      {/* Sort toggle */}
+      <div className="mb-4 flex rounded-lg border border-slate-700 p-0.5 text-xs font-medium">
+        {SORT_LABELS.map(({ mode, label }) => (
+          <button
+            key={mode}
+            onClick={() => setSort(mode)}
+            className={`flex-1 rounded-md px-2 py-1.5 transition-colors ${
+              sort === mode ? 'bg-slate-700 text-slate-100' : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {loading && <p className="text-sm text-slate-500">Loading…</p>}
 
       {!loading && filtered.length === 0 && (
         <p className="py-8 text-center text-sm text-slate-500">
-          {search ? 'No exercises found.' : 'No exercises logged yet — start by logging a workout.'}
+          {query ? 'No exercises found.' : 'No exercises logged yet — start by logging a workout.'}
         </p>
       )}
 
-      <ul className="space-y-2">
-        {filtered.map(ex => (
-          <li key={ex.id}>
-            <button
-              onClick={() => onSelect(ex)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600 hover:bg-slate-800"
-            >
-              <span
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{ backgroundColor: getColor(ex.muscle_group ?? ex.type) }}
-              />
-              <div className="flex-1">
-                <p className="font-medium text-slate-100">{ex.name}</p>
-                <p className="text-sm capitalize text-slate-500">
-                  {ex.muscle_group ?? ex.type}
-                </p>
-              </div>
-              <span className="text-sm text-slate-500">
-                {ex.session_count} {ex.session_count === 1 ? 'session' : 'sessions'}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {/* Grouped view */}
+      {!loading && isGrouped && (
+        <div className="space-y-5">
+          {(sort === 'type' ? byType : byMuscle).map(([group, items]) => (
+            <div key={group}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 capitalize">
+                {group}
+              </p>
+              <ul className="space-y-2">
+                {items.map(ex => (
+                  <li key={ex.id}>
+                    <ExerciseRow ex={ex} onSelect={onSelect} getColor={getColor} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Flat view (Most used, A–Z, or any grouped mode while searching) */}
+      {!loading && !isGrouped && (
+        <ul className="space-y-2">
+          {(sort === 'most-used' ? byMostUsed : byAZ).map(ex => (
+            <li key={ex.id}>
+              <ExerciseRow ex={ex} onSelect={onSelect} getColor={getColor} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
