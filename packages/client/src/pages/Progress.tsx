@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import { supabase } from '../lib/supabase'
 import type { Exercise } from '../hooks/useExercises'
 import { useMuscleGroupColors } from '../hooks/useMuscleGroupColors'
@@ -95,35 +98,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
   )
 }
 
-function BarChart({ sessions, type }: { sessions: Session[]; type: ExerciseType }) {
-  const visible = sessions.slice(-12)
-  const max = Math.max(...visible.map(s => barValue(s, type)), 1)
-
-  return (
-    <div>
-      <div className="flex h-28 items-end gap-1">
-        {visible.map(s => {
-          const val = barValue(s, type)
-          const pct = (val / max) * 100
-          return (
-            <div
-              key={s.workout_id}
-              className="flex-1 rounded-t-sm bg-blue-500"
-              style={{ height: `${Math.max(pct, 2)}%` }}
-            />
-          )
-        })}
-      </div>
-      <div className="mt-1 flex gap-1">
-        {visible.map(s => (
-          <div key={s.workout_id} className="flex-1 overflow-hidden text-center">
-            <span className="text-[10px] text-slate-600">{formatDate(s.date)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function StatsView({
   exercise,
@@ -191,14 +165,41 @@ function StatsView({
       </div>
 
       {/* Chart */}
-      {sessions.length > 1 && (
-        <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {type === 'strength' ? 'Est. 1RM per session (Epley)' : type === 'cardio' ? 'Duration per session' : 'Best reps per session'}
-          </p>
-          <BarChart sessions={sessions} type={type} />
-        </div>
-      )}
+      {sessions.length > 1 && (() => {
+        const lineColor = getColor(exercise.muscle_group ?? exercise.type)
+        const unit = type === 'strength' ? 'kg' : type === 'cardio' ? 'min' : 'reps'
+        const label = type === 'strength' ? 'Est. 1RM (Epley)' : type === 'cardio' ? 'Duration' : 'Best reps'
+        const chartData = sessions.slice(-20).map(s => ({
+          date: formatDate(s.date),
+          value: type === 'cardio'
+            ? s.bestDuration ? +(s.bestDuration / 60).toFixed(1) : 0
+            : barValue(s, type),
+        }))
+        return (
+          <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={['auto', 'auto']} />
+                <Tooltip
+                  formatter={(v: number | undefined) => v !== undefined ? [`${v} ${unit}`, label] : ['-', label]}
+                  contentStyle={{ borderRadius: 8, border: '1px solid #334155', background: '#0f172a', color: '#f1f5f9', fontSize: 12 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={lineColor}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )
+      })()}
 
       {/* Session history */}
       <div>
