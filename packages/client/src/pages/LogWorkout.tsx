@@ -251,6 +251,15 @@ export default function LogWorkout() {
     setEntries(prev => prev.filter((_, i) => i !== index))
   }
 
+  function moveEntry(index: number, dir: 'up' | 'down') {
+    const next = dir === 'up' ? index - 1 : index + 1
+    setEntries(prev => {
+      const arr = [...prev];
+      [arr[index], arr[next]] = [arr[next], arr[index]]
+      return arr
+    })
+  }
+
   function addSet(exerciseIndex: number) {
     setEntries(prev =>
       prev.map((entry, i) =>
@@ -411,12 +420,30 @@ export default function LogWorkout() {
                     )}
                   </p>
                 </div>
-                <button
-                  onClick={() => removeExercise(ei)}
-                  className="text-sm text-slate-500 hover:text-red-400"
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => moveEntry(ei, 'up')}
+                      disabled={ei === 0}
+                      className="leading-none text-slate-500 hover:text-slate-200 disabled:opacity-20"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveEntry(ei, 'down')}
+                      disabled={ei === entries.length - 1}
+                      className="leading-none text-slate-500 hover:text-slate-200 disabled:opacity-20"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => removeExercise(ei)}
+                    className="text-sm text-slate-500 hover:text-red-400"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
 
               <div className="mb-2 space-y-2">

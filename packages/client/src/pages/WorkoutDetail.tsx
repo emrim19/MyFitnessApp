@@ -261,6 +261,15 @@ export default function WorkoutDetail() {
     )
   }
 
+  function moveEditGroup(index: number, dir: 'up' | 'down') {
+    const next = dir === 'up' ? index - 1 : index + 1
+    setEditGroups(prev => {
+      const arr = [...prev];
+      [arr[index], arr[next]] = [arr[next], arr[index]]
+      return arr
+    })
+  }
+
   function addExerciseToEdit(exercise: Exercise) {
     setEditGroups(prev => [
       ...prev,
@@ -443,6 +452,24 @@ export default function WorkoutDetail() {
                   <p className="text-xs text-slate-500">{setTypeLabel(group.type)}</p>
                 </div>
               </div>
+              {editing && (
+                <div className="flex flex-col">
+                  <button
+                    onClick={() => moveEditGroup(gi, 'up')}
+                    disabled={gi === 0}
+                    className="leading-none text-slate-500 hover:text-slate-200 disabled:opacity-20"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveEditGroup(gi, 'down')}
+                    disabled={gi === editGroups.length - 1}
+                    className="leading-none text-slate-500 hover:text-slate-200 disabled:opacity-20"
+                  >
+                    ↓
+                  </button>
+                </div>
+              )}
             </div>
 
             {editing ? (
