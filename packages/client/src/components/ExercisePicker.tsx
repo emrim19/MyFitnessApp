@@ -255,10 +255,7 @@ function BrowseView({
   onManageGroupsClick: () => void
 }) {
   const [search, setSearch] = useState('')
-  const searchRef = useRef<HTMLInputElement>(null)
   const { getColor, setColor } = useMuscleGroupColors()
-
-  useEffect(() => { searchRef.current?.focus() }, [])
 
   const orderedNames = muscleGroups.map(g => g.name)
   const filtered = search.trim()
@@ -275,7 +272,6 @@ function BrowseView({
 
       <div className="px-4 py-3">
         <input
-          ref={searchRef}
           type="text"
           placeholder="Search…"
           value={search}

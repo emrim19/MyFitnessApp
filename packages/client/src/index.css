@@ -4,3 +4,8 @@ body {
   background-color: #020617; /* slate-950 */
   color: #f1f5f9; /* slate-100 */
 }
+
+/* Prevent iOS Safari from zooming in when focusing any input */
+input, select, textarea {
+  font-size: 16px;
+}
