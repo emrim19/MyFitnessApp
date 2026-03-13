@@ -240,9 +240,9 @@ function StatsView({
 type SortMode = 'type' | 'muscle' | 'most-used' | 'az'
 
 const SORT_LABELS: { mode: SortMode; label: string }[] = [
-  { mode: 'type',      label: 'Type'      },
   { mode: 'muscle',    label: 'Muscle'    },
   { mode: 'most-used', label: 'Most used' },
+  { mode: 'type',      label: 'Type'      },
   { mode: 'az',        label: 'A–Z'       },
 ]
 
@@ -298,7 +298,7 @@ function ExerciseSelector({
   onSelect: (ex: LoggedExercise) => void
 }) {
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState<SortMode>('type')
+  const [sort, setSort] = useState<SortMode>('muscle')
   const { getColor } = useMuscleGroupColors()
 
   const query = search.trim().toLowerCase()
