@@ -106,6 +106,7 @@ export default function LogWorkout() {
   const [title, setTitle] = useState('')
   const [workoutColor, setWorkoutColor] = useState<string | null>(null)
   const [entries, setEntries] = useState<ExerciseEntry[]>([])
+  const [prefilledIds, setPrefilledIds] = useState<Set<string>>(new Set())
   const [pickerOpen, setPickerOpen] = useState(false)
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -179,11 +180,56 @@ export default function LogWorkout() {
 
   // ── Exercise actions ────────────────────────────────────────
 
-  function addExercise(exercise: Exercise) {
+  async function fetchLastSets(exerciseId: string): Promise<SetRow[]> {
+    const { data } = await supabase
+      .from('workout_sets')
+      .select('workout_id, set_number, reps, weight_kg, duration_seconds, distance_meters, rpe, workouts!inner(date, is_rest_day)')
+      .eq('exercise_id', exerciseId)
+      .limit(100)
+
+    if (!data || data.length === 0) return [emptySet()]
+
+    type W = { date: string; is_rest_day: boolean }
+    const byWorkout = new Map<string, { date: string; sets: typeof data }>()
+
+    for (const s of data) {
+      const w = (Array.isArray(s.workouts) ? s.workouts[0] : s.workouts) as W | null
+      if (!w || w.is_rest_day) continue
+      if (!byWorkout.has(s.workout_id)) byWorkout.set(s.workout_id, { date: w.date, sets: [] })
+      byWorkout.get(s.workout_id)!.sets.push(s)
+    }
+
+    if (byWorkout.size === 0) return [emptySet()]
+
+    const mostRecent = [...byWorkout.values()].sort((a, b) => b.date.localeCompare(a.date))[0]
+    const sets = mostRecent.sets.sort((a, b) => (a.set_number ?? 0) - (b.set_number ?? 0))
+
+    return sets.map(s => ({
+      reps: s.reps != null ? String(s.reps) : '',
+      weight_kg: s.weight_kg != null ? String(s.weight_kg) : '',
+      duration_minutes: s.duration_seconds != null ? String(+(s.duration_seconds / 60).toFixed(1)) : '',
+      distance_km: s.distance_meters != null ? String(+(s.distance_meters / 1000).toFixed(2)) : '',
+      rpe: s.rpe != null ? String(s.rpe) : '',
+    }))
+  }
+
+  async function addExercise(exercise: Exercise) {
+    // Show card immediately with empty set for instant feedback
     setEntries(prev => [
       ...prev,
       { exercise_id: exercise.id, name: exercise.name, type: exercise.type, sets: [emptySet()] },
     ])
+    // Fetch last session's sets and pre-fill if found
+    const lastSets = await fetchLastSets(exercise.id)
+    const hasPrefill = lastSets.some(s => s.reps || s.weight_kg || s.duration_minutes || s.distance_km)
+    if (hasPrefill) {
+      setEntries(prev =>
+        prev.map(entry =>
+          entry.exercise_id === exercise.id ? { ...entry, sets: lastSets } : entry
+        )
+      )
+      setPrefilledIds(prev => new Set([...prev, exercise.id]))
+    }
   }
 
   async function handleCreateExercise(data: {
@@ -358,7 +404,12 @@ export default function LogWorkout() {
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h2 className="font-semibold text-slate-100">{entry.name}</h2>
-                  <p className="text-xs text-slate-500">{setTypeLabel(entry.type)}</p>
+                  <p className="text-xs text-slate-500">
+                    {setTypeLabel(entry.type)}
+                    {prefilledIds.has(entry.exercise_id) && (
+                      <span className="ml-2 text-slate-600">· from last session</span>
+                    )}
+                  </p>
                 </div>
                 <button
                   onClick={() => removeExercise(ei)}
